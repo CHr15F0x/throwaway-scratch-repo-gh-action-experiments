@@ -1,0 +1,12 @@
+name: e5b-branch-only
+# E5b: exists only on dev/chris. If GitHub ran issue-triggered workflows from non-default
+# branches, labeling an issue would start this one.
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  report:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "THIS MUST NEVER RUN: ref $GITHUB_REF"

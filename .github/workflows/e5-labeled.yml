@@ -17,11 +17,10 @@ jobs:
           echo "label added:  ${{ github.event.label.name }}"
           echo "issue labels: ${{ join(github.event.issue.labels.*.name, ',') }}"
           echo "actor:        ${{ github.actor }}"
-      - name: add a label with GITHUB_TOKEN (must not re-trigger this workflow)
-        if: github.event.label.name == 'probe-start'
+      - name: add a label with GITHUB_TOKEN via REST (must not re-trigger this workflow)
+        if: startsWith(github.event.label.name, 'probe-start')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue edit ${{ github.event.issue.number }} \
-            --repo CHr15F0x/throwaway-scratch-repo-gh-action-experiments \
-            --add-label added-by-github-token
+          gh api -X POST repos/CHr15F0x/throwaway-scratch-repo-gh-action-experiments/issues/${{ github.event.issue.number }}/labels \
+            -f 'labels[]=added-by-github-token' --jq '.[].name'

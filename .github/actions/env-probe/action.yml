@@ -1,0 +1,24 @@
+name: env-probe
+description: What a remotely fetched action can see; whether buildx can use the GHA cache from a plain run step.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        echo "action_path=$GITHUB_ACTION_PATH"
+        root="$(cd "$GITHUB_ACTION_PATH/../../.." && pwd)"
+        echo "repo root from action: $root"
+        echo "top-level entries: $(ls -A "$root" | tr '\n' ' ')"
+        if git -C "$root" rev-parse HEAD >/dev/null 2>&1; then echo "git: HEAD=$(git -C "$root" rev-parse --short HEAD)"; else echo "git: NO .git (archive download)"; fi
+        echo "runtime env: $(env | grep -oE '^ACTIONS_(RUNTIME_TOKEN|CACHE_URL|RESULTS_URL|RUNTIME_URL)' | tr '\n' ' ')"
+        echo "docker: $(docker --version)"; echo "buildx: $(docker buildx version)"
+        docker buildx ls
+    - name: buildx with gha cache, as the pipeline does it in a run step
+      shell: bash
+      run: |
+        set -o pipefail
+        cd "$GITHUB_ACTION_PATH"
+        docker buildx build --cache-from type=gha,scope=e21 --cache-to type=gha,scope=e21,mode=max \
+          -t env-probe:test -f Dockerfile --load . 2>&1 | tee build.log | grep -iE "cache|CACHED|error|warn|importing|exporting" || true
+        echo "buildx exit: ${PIPESTATUS[0]}"
+        docker run --rm env-probe:test cat /built-at

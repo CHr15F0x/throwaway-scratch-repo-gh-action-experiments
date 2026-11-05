@@ -1,0 +1,35 @@
+name: e26-dev
+# E26: the developer workflow in a dev tracking repo. For a `go-*` label event on an issue that
+# carries `pipeline-ref:<branch>`, it checks out that branch and runs the action from it.
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: e26-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  advance:
+    if: >-
+      startsWith(github.event.label.name, 'go-') &&
+      contains(join(github.event.issue.labels.*.name, ','), 'pipeline-ref:')
+    runs-on: ubuntu-24.04
+    steps:
+      - id: ref
+        env:
+          LABELS: ${{ join(github.event.issue.labels.*.name, '\n') }}
+        run: |
+          refs=$(printf '%s\n' "$LABELS" | sed -n 's/^pipeline-ref://p')
+          [ "$(printf '%s\n' "$refs" | wc -l)" -eq 1 ] || { echo "::error::expected exactly one pipeline-ref label, got: $refs"; exit 1; }
+          echo "ref=$refs" >> "$GITHUB_OUTPUT"
+          echo "selected ref: $refs"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.ref }}
+          persist-credentials: false
+      - id: probe
+        uses: ./.github/actions/probe
+        with:
+          who: e26-dev-issue-${{ github.event.issue.number }}
+      - run: echo "DEV handled issue #${{ github.event.issue.number }} label ${{ github.event.label.name }} on ref ${{ steps.ref.outputs.ref }} with marker ${{ steps.probe.outputs.marker }}"

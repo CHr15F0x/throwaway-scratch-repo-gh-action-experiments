@@ -1,0 +1,23 @@
+name: e26-main
+# E26: the production-shaped workflow in a dev tracking repo. It handles every `go-*` label
+# event except on issues that carry a `pipeline-ref:` label, which e26-dev takes.
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: e26-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  advance:
+    if: >-
+      startsWith(github.event.label.name, 'go-') &&
+      !contains(join(github.event.issue.labels.*.name, ','), 'pipeline-ref:')
+    runs-on: ubuntu-24.04
+    steps:
+      - id: probe
+        uses: CHr15F0x/throwaway-scratch-repo-gh-action-experiments/.github/actions/probe@main
+        with:
+          who: e26-main-issue-${{ github.event.issue.number }}
+      - run: echo "MAIN handled issue #${{ github.event.issue.number }} label ${{ github.event.label.name }} with marker ${{ steps.probe.outputs.marker }}"

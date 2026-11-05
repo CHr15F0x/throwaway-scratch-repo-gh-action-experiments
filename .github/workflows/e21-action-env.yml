@@ -1,0 +1,18 @@
+name: e21-action-env
+# E21: a remotely referenced action: does it get a .git directory, the whole repo tree, and can a
+# plain run step inside it use the buildx GHA cache? Dispatch twice to see a cache hit.
+on:
+  workflow_dispatch:
+
+jobs:
+  remote:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: CHr15F0x/throwaway-scratch-repo-gh-action-experiments/.github/actions/env-probe@main
+  local-after-checkout:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/env-probe

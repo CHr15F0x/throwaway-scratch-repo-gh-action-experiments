@@ -20,4 +20,5 @@ jobs:
         uses: CHr15F0x/throwaway-scratch-repo-gh-action-experiments/.github/actions/probe@main
         with:
           who: e26-main-issue-${{ github.event.issue.number }}
-      - run: echo "MAIN handled issue #${{ github.event.issue.number }} label ${{ github.event.label.name }} with marker ${{ steps.probe.outputs.marker }}"
+      - run: |
+          echo "MAIN handled issue ${{ github.event.issue.number }} label ${{ github.event.label.name }} with marker ${{ steps.probe.outputs.marker }}"

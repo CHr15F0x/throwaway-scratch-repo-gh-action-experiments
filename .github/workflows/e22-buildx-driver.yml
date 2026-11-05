@@ -1,0 +1,22 @@
+name: e22-buildx-driver
+# E22: the same buildx build with type=gha cache, but after docker/setup-buildx-action, which
+# creates a docker-container builder and exposes the Actions runtime token. Dispatch twice.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v3
+      - run: |
+          docker buildx ls
+          echo "runtime env: $(env | grep -oE '^ACTIONS_(RUNTIME_TOKEN|CACHE_URL|RESULTS_URL|RUNTIME_URL)' | tr '\n' ' ')"
+          cd .github/actions/env-probe
+          docker buildx build --cache-from type=gha,scope=e22 --cache-to type=gha,scope=e22,mode=max \
+            -t env-probe:e22 -f Dockerfile --load . 2>&1 | grep -iE "cache|CACHED|importing|exporting|error|warn|done$" | tail -20
+          echo "buildx exit: ${PIPESTATUS[0]}"
+          docker run --rm env-probe:e22 cat /built-at

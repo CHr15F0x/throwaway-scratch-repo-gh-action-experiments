@@ -1,0 +1,39 @@
+name: e23-buildx-cache-variants
+# E23: two ways to make the type=gha cache work. Job A exposes the Actions runtime token to a
+# plain `run:` build; job B uses docker/build-push-action, which handles the cache itself.
+# Dispatch twice; a hit shows as an unchanged /built-at timestamp.
+on:
+  workflow_dispatch:
+
+jobs:
+  a-runtime-token:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: crazy-max/ghaction-github-runtime@v3
+      - uses: docker/setup-buildx-action@v3
+      - run: |
+          echo "runtime env: $(env | grep -oE '^ACTIONS_(RUNTIME_TOKEN|CACHE_URL|RESULTS_URL|RUNTIME_URL)' | tr '\n' ' ')"
+          cd .github/actions/env-probe
+          docker buildx build --cache-from type=gha,scope=e23a --cache-to type=gha,scope=e23a,mode=max \
+            -t env-probe:e23a -f Dockerfile --load . 2>&1 | tail -40
+          echo "buildx exit: ${PIPESTATUS[0]}"
+          docker run --rm env-probe:e23a cat /built-at
+  b-build-push-action:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .github/actions/env-probe
+          file: .github/actions/env-probe/Dockerfile
+          tags: env-probe:e23b
+          load: true
+          cache-from: type=gha,scope=e23b
+          cache-to: type=gha,scope=e23b,mode=max
+      - run: docker run --rm env-probe:e23b cat /built-at

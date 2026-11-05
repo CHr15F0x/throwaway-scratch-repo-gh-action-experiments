@@ -1,0 +1,42 @@
+name: probe
+description: Reports which copy of the action ran (its MARKER file) and exercises composite features.
+inputs:
+  who:
+    description: Caller label echoed back
+    required: true
+  secret-in:
+    description: A value passed from the caller's secrets context, to show masking works through inputs
+    required: false
+    default: ""
+outputs:
+  marker:
+    description: Content of the MARKER file next to this action.yml
+    value: ${{ steps.marker.outputs.marker }}
+  action-path:
+    description: GITHUB_ACTION_PATH as seen inside the action
+    value: ${{ steps.marker.outputs.action_path }}
+runs:
+  using: composite
+  steps:
+    - id: marker
+      shell: bash
+      run: |
+        echo "who=${{ inputs.who }}"
+        echo "action_path=$GITHUB_ACTION_PATH"
+        echo "marker=$(cat "$GITHUB_ACTION_PATH/MARKER")"
+        echo "secret_len=${#SECRET_IN}"
+        echo "marker=$(cat "$GITHUB_ACTION_PATH/MARKER")" >> "$GITHUB_OUTPUT"
+        echo "action_path=$GITHUB_ACTION_PATH" >> "$GITHUB_OUTPUT"
+      env:
+        SECRET_IN: ${{ inputs.secret-in }}
+    - name: nested action works inside a composite action
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: sudo and python from the nested action
+      shell: bash
+      run: |
+        sudo true && echo "sudo ok"
+        python --version
+        ls -l /dev/kvm || echo "no /dev/kvm"
+        python "$GITHUB_ACTION_PATH/hello.py"

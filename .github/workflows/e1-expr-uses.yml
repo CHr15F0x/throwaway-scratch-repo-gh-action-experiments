@@ -1,0 +1,16 @@
+name: e1-expr-uses
+# E1: `uses:` with an expression in the ref. Expected to be rejected by GitHub at parse time.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        type: string
+        default: main
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: CHr15F0x/throwaway-scratch-repo-gh-action-experiments/.github/actions/probe@${{ inputs.ref }}
+        with:
+          who: e1

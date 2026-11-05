@@ -1,0 +1,31 @@
+name: e2-dynamic-ref
+# E2: a workflow on main runs the action code from an arbitrary ref chosen at dispatch time, by
+# checking out that ref and using the action by local path.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch whose copy of the action should run
+        type: string
+        required: true
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - id: probe
+        uses: ./.github/actions/probe
+        with:
+          who: e2-${{ inputs.ref }}
+          secret-in: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          echo "workflow ref: $GITHUB_REF"
+          echo "checked out:  ${{ inputs.ref }}"
+          echo "marker:       ${{ steps.probe.outputs.marker }}"
+          echo "action path:  ${{ steps.probe.outputs.action-path }}"

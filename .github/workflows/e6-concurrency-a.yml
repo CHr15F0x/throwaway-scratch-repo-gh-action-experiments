@@ -1,0 +1,19 @@
+name: e6-concurrency-a
+# E6: two different workflows share one concurrency group. Dispatch a, then b, then a again and
+# watch which runs queue and which get cancelled.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        type: string
+        default: a
+
+concurrency:
+  group: e6-shared-group
+  cancel-in-progress: false
+
+jobs:
+  hold:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "e6 a tag=${{ inputs.tag }} start $(date -u +%T)"; sleep 120; echo "end $(date -u +%T)"

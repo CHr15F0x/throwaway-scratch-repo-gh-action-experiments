@@ -1,0 +1,27 @@
+name: e5-labeled
+# E5: which copy of an issues-triggered workflow runs (only main's; a sibling workflow that
+# exists only on dev/chris must never fire), and whether a label added with GITHUB_TOKEN
+# triggers another run (it must not).
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  report:
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+    steps:
+      - run: |
+          echo "ran from ref: $GITHUB_REF (sha $GITHUB_SHA)"
+          echo "label added:  ${{ github.event.label.name }}"
+          echo "issue labels: ${{ join(github.event.issue.labels.*.name, ',') }}"
+          echo "actor:        ${{ github.actor }}"
+      - name: add a label with GITHUB_TOKEN (must not re-trigger this workflow)
+        if: github.event.label.name == 'probe-start'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --repo CHr15F0x/throwaway-scratch-repo-gh-action-experiments \
+            --add-label added-by-github-token

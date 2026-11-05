@@ -1,0 +1,33 @@
+name: e3-remote-self
+# E3: reference the action in a subdirectory of this (private) repo by owner/repo/path@ref, with
+# a slash in the ref, without checking anything out. Two literal refs, since `uses:` takes no
+# expression.
+on:
+  workflow_dispatch:
+
+jobs:
+  from-main:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - id: probe
+        uses: CHr15F0x/throwaway-scratch-repo-gh-action-experiments/.github/actions/probe@main
+        with:
+          who: e3-main
+      - run: |
+          echo "marker:      ${{ steps.probe.outputs.marker }}"
+          echo "action path: ${{ steps.probe.outputs.action-path }}"
+          ls "$GITHUB_WORKSPACE" || true
+  from-branch:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - id: probe
+        uses: CHr15F0x/throwaway-scratch-repo-gh-action-experiments/.github/actions/probe@dev/chris
+        with:
+          who: e3-branch
+      - run: |
+          echo "marker:      ${{ steps.probe.outputs.marker }}"
+          echo "action path: ${{ steps.probe.outputs.action-path }}"

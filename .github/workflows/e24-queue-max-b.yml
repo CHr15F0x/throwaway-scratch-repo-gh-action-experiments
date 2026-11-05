@@ -1,0 +1,15 @@
+name: e24-queue-max-b
+# E24: like E6, but with queue: max. Dispatch a, b, a: all three should wait their turn.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: e24-shared-group
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  hold:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "e24 b start $(date -u +%T)"; sleep 90

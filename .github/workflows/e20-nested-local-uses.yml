@@ -1,0 +1,20 @@
+name: e20-nested-local-uses
+# E20: a remotely referenced composite action (owner/repo/path@ref) that internally does
+# `uses: ./.github/actions/probe`. Against what is that relative path resolved: the action's
+# own checkout under _actions, or the job workspace?
+on:
+  workflow_dispatch:
+
+jobs:
+  no-checkout:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: CHr15F0x/throwaway-scratch-repo-gh-action-experiments/.github/actions/outer@dev/chris
+  workspace-on-main-action-on-branch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: CHr15F0x/throwaway-scratch-repo-gh-action-experiments/.github/actions/outer@dev/chris

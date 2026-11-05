@@ -1,0 +1,13 @@
+name: outer
+description: A composite action whose step references another local action by relative path.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: echo "outer action_path=$GITHUB_ACTION_PATH"
+    - id: inner
+      uses: ./.github/actions/probe
+      with:
+        who: from-outer
+    - shell: bash
+      run: echo "inner marker seen by outer=${{ steps.inner.outputs.marker }}"
